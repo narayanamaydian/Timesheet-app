@@ -3,11 +3,11 @@
 namespace Timesheet_app.Data
 {
     
-    public class DatabaseConnection
+    public class MongoDbConnection
     {
         private readonly IMongoDatabase _database;
 
-        public DatabaseConnection(IConfiguration configuration)
+        public MongoDbConnection(IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("MongoDB");
             var client = new MongoClient(connectionString);

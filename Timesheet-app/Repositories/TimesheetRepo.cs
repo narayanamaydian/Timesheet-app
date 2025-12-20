@@ -8,7 +8,7 @@ namespace Timesheet_app.Repositories
     public class TimesheetRepo : ITimesheetRepo
     {
         private readonly IMongoCollection<TimesheetModel> _timesheetCollection;
-        public TimesheetRepo(DatabaseConnection dbConnection)
+        public TimesheetRepo(MongoDbConnection dbConnection)
         {
             _timesheetCollection = dbConnection.GetDatabase().GetCollection<TimesheetModel>("Timesheets");
         }
