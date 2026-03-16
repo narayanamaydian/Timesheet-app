@@ -4,33 +4,27 @@ using Timesheet_app.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddSingleton<MongoDbConnection>();
 builder.Services.AddScoped<ITimesheetRepo, TimesheetRepo>();
-
+builder.Services.AddScoped<IUserRepo, UserRepo>();
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var sqlConn = builder.Configuration.GetSection("ConnectionStringsSql")["SqlServer"];
+if (string.IsNullOrWhiteSpace(sqlConn))
+    throw new InvalidOperationException("SQL connection string not found. Set ConnectionStringsSql:SqlServer in appsettings.json.");
+
+builder.Services.AddDbContext<SQLServerDBConnection>(options =>
+    options.UseSqlServer(sqlConn));
+
 var app = builder.Build();
-var connectionString = builder.Configuration.GetConnectionString("SqlServerConnection");
-builder.Services.AddDbContext<SqlDbContext>(options =>
-    options.UseSqlServer(connectionString));
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
