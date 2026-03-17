@@ -2,7 +2,7 @@
 {
     public class TimesheetDTO
     {
-        public String Id { get; set; }
+        public required string Id { get; set; }
         public DateOnly Date { get; set; }
         public TimeOnly? ClockIn { get; set; }  // Stores exact clock-in time
         public TimeOnly? ClockOut { get; set; } // Stores exact clock-out time

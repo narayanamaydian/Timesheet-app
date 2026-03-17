@@ -1,5 +1,6 @@
 using Timesheet_app.Models;
 using Timesheet_app.Models.DAO;
+using Timesheet_app.Models.DTOs;
 using Timesheet_app.Repositories;
 
 namespace Timesheet_app.Services
@@ -15,19 +16,46 @@ namespace Timesheet_app.Services
             _userRepo = userRepo;
         }
 
-        public async Task<List<TimesheetDTO>> GetTimesheetByMonthAsync(string userId, int? month, int year)
+        public async Task<TimesheetUserDTO> GetTimesheetByMonthAsync(string userId, int? month, int year)
         {
             var timesheet = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
-            return ConvertToDTOs(timesheet);
+            var user = timesheet[1].User;
+            var timesheetDto = ConvertToDTOs(timesheet);
+
+            return new TimesheetUserDTO
+            {
+                Timesheet = timesheetDto,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    VendorName = user.VendorName,
+                    NoSpk = user.NoSpk
+
+                }
+            };
         }
 
-        public async Task<List<TimesheetDTO>> GetTimesheetByUserAsync(string userId, int? month)
+        public async Task<TimesheetUserDTO> GetTimesheetByUserAsync(string userId, int? month)
         {
             month ??= DateTime.Now.Month;
             var year = DateTime.Now.Year;
 
             var timesheet = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
-            return ConvertToDTOs(timesheet);
+            var user = timesheet[1].User;
+            var timesheetDto =  ConvertToDTOs(timesheet);
+
+            return new TimesheetUserDTO
+            {
+                Timesheet = timesheetDto,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    VendorName = user.VendorName,
+                    NoSpk = user.NoSpk
+                }
+            };
         }
 
         public async Task<TimesheetDTO> AddTimesheetAsync(TimesheetDTO timesheet, string userId)
