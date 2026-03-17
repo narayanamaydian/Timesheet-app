@@ -1,6 +1,6 @@
 ﻿namespace Timesheet_app.Models.DTOs
 {
-    public class TimesheetDto
+    public class TimesheetInputDto
     {
         public string Id { get; set; }
         public int Month { get; set; }

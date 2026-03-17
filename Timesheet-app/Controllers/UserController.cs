@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography;
-using System.Text;
-using Timesheet_app.Models;
 using Timesheet_app.Models.DTOs;
-using Timesheet_app.Repositories;
+using Timesheet_app.Services;
 
 namespace Timesheet_app.Controllers
 {
@@ -11,19 +8,16 @@ namespace Timesheet_app.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserRepo _userRepo;
+        private readonly IUserService _userService;
 
-        public UserController(IUserRepo userRepo)
+        public UserController(IUserService userService)
         {
-            _userRepo = userRepo;
+            _userService = userService;
         }
 
         [HttpPost]
         public async Task<ActionResult<UserDto>> AddUser([FromBody] UserDto userDto)
         {
-            string dateString = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            string userId = GenerateId(userDto.Name, userDto.VendorName, userDto.NoSpk);
-            userId = dateString + userId.ToString();
             if (userDto == null)
             {
                 return BadRequest("User data is required");
@@ -36,33 +30,33 @@ namespace Timesheet_app.Controllers
 
             try
             {
-                // Map DTO to Entity
-                var user = new UserModel
-                {
-                    Id = userId,
-                    Name = userDto.Name,
-                    VendorName = userDto.VendorName,
-                    NoSpk = userDto.NoSpk
-                    // Timesheets is null by default (optional property)
-                };
-
-                await _userRepo.AddUser(user);
-                return CreatedAtAction(nameof(AddUser), new { id = userId }, userDto);
+                var result = await _userService.AddUserAsync(userDto);
+                return CreatedAtAction(nameof(AddUser), new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        public static string GenerateId(string name, string vendorName, string spkNumber)
+
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<UserDto>> GetUser(string userId)
         {
-            string input = $"{name}|{vendorName}|{spkNumber}";
-            using (var md5 = MD5.Create())
+            try
             {
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
-                return BitConverter.ToString(hash).Replace("-", "").ToLower(); ;
+                var user = await _userService.GetUserByIdAsync(userId);
+                
+                if (user == null)
+                {
+                    return NotFound($"User with ID {userId} not found");
+                }
+
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
     }
 }

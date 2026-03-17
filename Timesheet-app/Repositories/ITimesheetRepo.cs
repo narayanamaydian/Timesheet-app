@@ -1,4 +1,5 @@
 ﻿using Timesheet_app.Models;
+using Timesheet_app.Models.DAO;
 
 namespace Timesheet_app.Repositories
 {

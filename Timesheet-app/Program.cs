@@ -1,11 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using Timesheet_app.Data;
 using Timesheet_app.Repositories;
+using Timesheet_app.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register Repositories
 builder.Services.AddScoped<ITimesheetRepo, TimesheetRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
+
+// Register Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITimesheetService, TimesheetService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

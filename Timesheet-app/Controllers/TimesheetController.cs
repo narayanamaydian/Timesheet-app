@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Timesheet_app.Models;
+using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
-using Timesheet_app.Repositories;
+using Timesheet_app.Services;
 
 namespace Timesheet_app.Controllers
 {
@@ -9,45 +9,60 @@ namespace Timesheet_app.Controllers
     [Route("api/[controller]")]
     public class TimesheetController : ControllerBase
     {
-        private readonly ITimesheetRepo _timesheetRepo;
-        private readonly IUserRepo _userRepo;
-        public TimesheetController(ITimesheetRepo timesheetRepo, IUserRepo userRepo)
+        private readonly ITimesheetService _timesheetService;
+        private readonly IUserService _userService;
+
+        public TimesheetController(ITimesheetService timesheetService, IUserService userService)
         {
-            _timesheetRepo = timesheetRepo;
-            _userRepo = userRepo;
+            _timesheetService = timesheetService;
+            _userService = userService;
         }
+
         [HttpGet("GetTimesheetByMonth/{userId}/{month}/{year}")]
-        public async Task<IActionResult> GetTimesheetByMonth(string userId, int month, int year)
+        public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByMonth(string userId, int month, int year)
         {
-            var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
-            return Ok(timesheets);
+            try
+            {
+                var timesheets = await _timesheetService.GetTimesheetByMonthAsync(userId, month, year);
+                return Ok(timesheets);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpGet("GetTimesheetByUser/{userId}")]
-        public async Task<IActionResult> GetTimesheetByUser(string userId, [FromQuery] int? month)
+        public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByUser(string userId, [FromQuery] int? month)
         {
-            month ??= DateTime.Now.Month;
-            var year = DateTime.Now.Year;
-
-            var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
-            return Ok(timesheets);
+            try
+            {
+                var timesheets = await _timesheetService.GetTimesheetByUserAsync(userId, month);
+                return Ok(timesheets);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
-        [HttpPost("Add")]
-        public async Task<IActionResult> AddTimesheet([FromBody] TimesheetModel timesheet)
+        [HttpPost("add/{userId}")]
+        public async Task<ActionResult<TimesheetDTO>> AddTimesheet(string userId, [FromBody] TimesheetDTO timesheet)
         {
             if (timesheet == null)
             {
                 return BadRequest("Timesheet data is required");
             }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
             try
             {
-                await _timesheetRepo.AddTimesheet(timesheet);
-                return CreatedAtAction(nameof(AddTimesheet), new { id = timesheet.Id }, timesheet);
+                var result = await _timesheetService.AddTimesheetAsync(timesheet, userId);
+                return CreatedAtAction(nameof(AddTimesheet), new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
@@ -55,64 +70,32 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpPost("Generate")]
-        public async Task<IActionResult> GenerateTimesheet([FromBody] TimesheetDto request)
+        [HttpPost("generate")]
+        public async Task<ActionResult<List<TimesheetDTO>>> GenerateTimesheet([FromBody] TimesheetInputDto request)
         {
             if (request == null)
             {
                 return BadRequest("Request data is required");
             }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
             try
             {
-                var timesheets = GeneratedForMonth(request.Id, request.Month, request.Year);
-                foreach (var timesheet in timesheets)
-                {
-                    await _timesheetRepo.AddTimesheet(timesheet);
-                }
-                var currentMonth = DateTime.Now.Month;
-                return Ok("Success insert in " + currentMonth);
+                var timesheets = await _timesheetService.GenerateTimesheetForMonthAsync(request.Id, request.Month, request.Year);
+                return Ok(timesheets);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
-        private List<TimesheetModel> GeneratedForMonth(string userId, int month, int year)
-        {
-            var timesheets = new List<TimesheetModel>();
-            UserModel user = _userRepo.GetUserById(userId).Result;
-
-            var daysInMonth = DateTime.DaysInMonth(year, month);
-
-            var clockIn = new TimeOnly(9, 0, 0);
-            var clockOut = new TimeOnly(17, 0, 0);
-            var totalTime = clockOut.ToTimeSpan() - clockIn.ToTimeSpan();
-
-
-
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var currentDate = new DateOnly(year, month, day);
-                var isItWeekend = currentDate.DayOfWeek == DayOfWeek.Saturday || currentDate.DayOfWeek == DayOfWeek.Sunday;
-                timesheets.Add(new TimesheetModel
-                {
-                    User = user,
-                    Date = new DateOnly(year, month, day),
-                    ClockIn = clockIn,
-                    ClockOut = clockOut,
-                    AccumulatedTime = totalTime,
-                    Working = !isItWeekend,
-                    Id = $"{userId}_{currentDate:yyyyMMdd}"
-                });
-            }
-            return timesheets;
-        }
     }
-
-    
 }
