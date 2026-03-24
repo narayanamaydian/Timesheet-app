@@ -2,6 +2,7 @@
 using Timesheet_app.Data;
 using Timesheet_app.Models;
 using Timesheet_app.Models.DAO;
+using Timesheet_app.Models.DTOs;
 
 namespace Timesheet_app.Repositories
 {
@@ -22,7 +23,7 @@ namespace Timesheet_app.Repositories
             return _dbContext.SaveChangesAsync();
         }
 
-        public async Task<TimesheetModel> GetTimesheetByDay(string userId, int? day, int month, int year)
+        public async Task<TimesheetModel?> GetTimesheetByDay(string userId, int? day, int month, int year)
         {
             var TimesheetDay = new DateOnly(year, month, day ?? DateTime.Now.Day);
             var timesheet = await _dbContext.Timesheets
@@ -49,7 +50,16 @@ namespace Timesheet_app.Repositories
 
         }
 
-        
+        public async Task<TimesheetModel> GetTimesheetById(string id)
+        {
+            var timesheet = await _dbContext.Timesheets
+                .Include(t => t.User)
+                .Where(t => t.Id == id)
+                .FirstOrDefaultAsync();
+
+            return timesheet;
+        }
+
 
     }
     

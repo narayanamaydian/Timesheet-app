@@ -8,10 +8,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Register Repositories
 builder.Services.AddScoped<ITimesheetRepo, TimesheetRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
+builder.Services.AddScoped<IHollidayRepo, HollidayRepo>();
 
 // Register Services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
+builder.Services.AddScoped<IHollidayService, HollidayService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -10,7 +10,7 @@ namespace Timesheet_app.Models
         public TimeSpan AccumulatedTime { get; set; } // Stores total time worked
         public bool Working { get; set; }
 
-        public required UserModel User { get; set; }
-
+        public string UserID { get; set; } // Foreign key to UserModel
+        public UserModel User { get; set; } // Navigation property to UserModel
     }
 }

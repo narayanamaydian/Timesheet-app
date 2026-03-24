@@ -10,12 +10,10 @@ namespace Timesheet_app.Controllers
     public class TimesheetController : ControllerBase
     {
         private readonly ITimesheetService _timesheetService;
-        private readonly IUserService _userService;
 
-        public TimesheetController(ITimesheetService timesheetService, IUserService userService)
+        public TimesheetController(ITimesheetService timesheetService)
         {
             _timesheetService = timesheetService;
-            _userService = userService;
         }
 
         [HttpGet("GetTimesheetByMonth/{userId}/{month}/{year}")]

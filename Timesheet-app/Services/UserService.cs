@@ -35,14 +35,22 @@ namespace Timesheet_app.Services
             
             if (user == null) return null;
 
+
             // Map Entity to DTO
-            return new UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id,
                 Name = user.Name,
                 VendorName = user.VendorName,
                 NoSpk = user.NoSpk
             };
+
+            return userDto;
+        }
+
+        public Task<bool> UserExistsAsync(string userId)
+        {
+            return _userRepo.UserExists(userId);
         }
     }
 }
