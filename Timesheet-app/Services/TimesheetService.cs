@@ -168,9 +168,15 @@ namespace Timesheet_app.Services
             };
         }
 
-        public Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId)
+        public async Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId)
         {
-            var timesheets = _timesheetRepo.GetTimesheetByMonth(userId, month, year).Result;
+            var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
+
+            foreach(var timesheet in timesheets)
+            {
+                var getDate = timesheet.Date;
+                var holiday = _holidayService.GetHolidayByDate(getDate).Result;
+            }
             var user = timesheets[1].User;
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Timesheet");
@@ -178,7 +184,7 @@ namespace Timesheet_app.Services
             var timesheetDto = ConvertToDTOs(timesheets);
 
 
-            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "Working" };
+            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "Working", "Holiday Description" };
 
             var table = new DataTable();
             foreach(var columnName in newArrayColumnName)
@@ -188,16 +194,12 @@ namespace Timesheet_app.Services
 
             foreach(var timesheet in timesheetDto)
             {
-                if(timesheet.Working == false)
-                {
-                    timesheet.ClockIn = null;
-                    timesheet.ClockOut = null;
-                    timesheet.AccumulatedTime = TimeSpan.Zero;
-                }
-                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, timesheet.Date, timesheet.ClockIn, timesheet.ClockOut, timesheet.AccumulatedTime, timesheet.Working);
+                var holiday = await _holidayService.GetHolidayByDate(timesheet.Date);
+                var holidayDescription = holiday != null ? holiday.Description : string.Empty;
+                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, timesheet.Date, timesheet.ClockIn, timesheet.ClockOut, timesheet.AccumulatedTime, timesheet.Working, holidayDescription);
             }
 
-            return Task.FromResult(table);
+            return table;
         }
     }
 }

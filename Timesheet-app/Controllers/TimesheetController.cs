@@ -115,30 +115,58 @@ namespace Timesheet_app.Controllers
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Timesheet");
 
-                worksheet.Cell(1, 1).InsertTable(dt);
+                int rowIndex = 1;
 
-                // Loop through rows after header
-                for (int row = 2; row <= dt.Rows.Count + 1; row++)
+                // headers
+                worksheet.Cell(rowIndex, 1).Value = "User ID";
+                worksheet.Cell(rowIndex, 2).Value = "Name";
+                worksheet.Cell(rowIndex, 3).Value = "Vendor Name";
+                worksheet.Cell(rowIndex, 4).Value = "No SPK";
+                worksheet.Cell(rowIndex, 5).Value = "Date";
+                worksheet.Cell(rowIndex, 6).Value = "Clock In";
+                worksheet.Cell(rowIndex, 7).Value = "Clock Out";
+                worksheet.Cell(rowIndex, 8).Value = "Accumulated Time";
+                rowIndex++;
+
+                // data
+                foreach (DataRow row in dt.Rows)
                 {
-                    var clockInCell = worksheet.Cell(row, 6);   // adjust index for your actual column
-                    var clockOutCell = worksheet.Cell(row, 7);
-                    var accumulatedCell = worksheet.Cell(row, 8);
+                    worksheet.Cell(rowIndex, 1).Value = XLCellValue.FromObject(row["User ID"]);
+                    worksheet.Cell(rowIndex, 2).Value = XLCellValue.FromObject(row["Name"]);
+                    worksheet.Cell(rowIndex, 3).Value = XLCellValue.FromObject(row["Vendor Name"]);
+                    worksheet.Cell(rowIndex, 4).Value = XLCellValue.FromObject(row["No SPK"]);
+                    worksheet.Cell(rowIndex, 5).Value = XLCellValue.FromObject(row["Date"]);
 
-                    // Check if all three are blank/null
-                    bool allNull = string.IsNullOrEmpty(clockInCell.GetString()) &&
-                                   string.IsNullOrEmpty(clockOutCell.GetString()) &&
-                                   accumulatedCell.GetValue<TimeSpan>() == TimeSpan.Zero;
+                    bool working = row.Table.Columns.Contains("Working") &&
+                                   row["Working"] != DBNull.Value &&
+                                   Convert.ToBoolean(row["Working"]);
 
-                    if (allNull)
+                    if (!working)
                     {
-                        // Merge the three cells into one visually
-                        worksheet.Range(clockInCell, accumulatedCell).Merge();
-
-                        // Optionally set a placeholder text
-                        clockInCell.Value = "Not Working";
-                        clockInCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                        // Merge the three cells visually
+                        worksheet.Range(rowIndex, 6, rowIndex, 8).Merge();
+                        if (row.Table.Columns.Contains("Holiday Description") &&
+                            row["Holiday Description"] != DBNull.Value &&
+                            !string.IsNullOrEmpty(row["Holiday Description"].ToString()))
+                        {
+                            worksheet.Cell(rowIndex, 6).Value = row["Holiday Description"].ToString();
+                        }
+                        else
+                        {
+                            worksheet.Cell(rowIndex, 6).Value = "";
+                        }
+                        worksheet.Cell(rowIndex, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     }
+                    else
+                    {
+                        worksheet.Cell(rowIndex, 6).Value = XLCellValue.FromObject(row["Clock In"]);
+                        worksheet.Cell(rowIndex, 7).Value = XLCellValue.FromObject(row["Clock Out"]);
+                        worksheet.Cell(rowIndex, 8).Value = XLCellValue.FromObject(row["Accumulated Time"]);
+                    }
+
+                    rowIndex++;
                 }
+
                 using var stream = new MemoryStream();
                 workbook.SaveAs(stream);
                 stream.Position = 0;
