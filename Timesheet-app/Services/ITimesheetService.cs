@@ -1,3 +1,4 @@
+using System.Data;
 using Timesheet_app.Models;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
@@ -10,5 +11,6 @@ namespace Timesheet_app.Services
         Task<TimesheetUserDTO> GetTimesheetByUserAsync(string userId, int? month);
         Task<TimesheetDTO> AddTimesheetAsync(TimesheetDTO timesheet, string userId);
         Task<List<TimesheetDTO>> GenerateTimesheetForMonthAsync(string userId, int month, int year);
+        Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId);
     }
 }

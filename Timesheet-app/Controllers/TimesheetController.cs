@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
 using Timesheet_app.Services;
@@ -85,6 +87,67 @@ namespace Timesheet_app.Controllers
             {
                 var timesheets = await _timesheetService.GenerateTimesheetForMonthAsync(request.Id, request.Month, request.Year);
                 return Ok(timesheets);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("Excel/{userId}")]
+        public async Task<ActionResult<DataTable>> GenerateExelData(string userId, [FromQuery] int month, [FromQuery] int year)
+        {
+            if (month == 0 || year == 0)
+            {
+                return BadRequest("Request data is required");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var dt = await _timesheetService.GetTimesheetByMonthForUsersAsync(month, year, userId);
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Timesheet");
+
+                worksheet.Cell(1, 1).InsertTable(dt);
+
+                // Loop through rows after header
+                for (int row = 2; row <= dt.Rows.Count + 1; row++)
+                {
+                    var clockInCell = worksheet.Cell(row, 6);   // adjust index for your actual column
+                    var clockOutCell = worksheet.Cell(row, 7);
+                    var accumulatedCell = worksheet.Cell(row, 8);
+
+                    // Check if all three are blank/null
+                    bool allNull = string.IsNullOrEmpty(clockInCell.GetString()) &&
+                                   string.IsNullOrEmpty(clockOutCell.GetString()) &&
+                                   accumulatedCell.GetValue<TimeSpan>() == TimeSpan.Zero;
+
+                    if (allNull)
+                    {
+                        // Merge the three cells into one visually
+                        worksheet.Range(clockInCell, accumulatedCell).Merge();
+
+                        // Optionally set a placeholder text
+                        clockInCell.Value = "Not Working";
+                        clockInCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    }
+                }
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
+
+
+                return File(stream.ToArray(),
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"Timesheet_{userId}_{month}_{year}.xlsx");
+
             }
             catch (InvalidOperationException ex)
             {
