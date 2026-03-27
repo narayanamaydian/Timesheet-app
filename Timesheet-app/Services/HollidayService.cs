@@ -13,11 +13,26 @@ namespace Timesheet_app.Services
         {
             _hollidayRepo = hollidayRepo;
         }
-        public Task AddHoliday(HollidayDTO holiday)
+        public async Task AddOrUpdate(HollidayDTO holiday)
         {
+            var existingHoliday = await _hollidayRepo.GetHollidayByDateAsync(holiday.Day, holiday.Month, holiday.Year);
+            
+
+            if (existingHoliday != null)
+            {
+                existingHoliday.Day = holiday.Day;
+                existingHoliday.Month = holiday.Month;
+                existingHoliday.Year = holiday.Year;
+                existingHoliday.Description = holiday.Description;
+                existingHoliday.Recurring = holiday.Recurring;
+                await _hollidayRepo.UpdateHolliday(existingHoliday);
+                return;
+            }
+
             var hollidayModel = ChangeDTOToToModel(holiday);
-                hollidayModel.Id = IdGenerated(hollidayModel);
-            return _hollidayRepo.AddHolliday(hollidayModel);
+            hollidayModel.Id = IdGenerated(hollidayModel);
+            await _hollidayRepo.AddHolliday(hollidayModel);
+            return;
         }
 
         public async Task<List<HollidayDTO>> GenerateRecuringHoliday(int year)

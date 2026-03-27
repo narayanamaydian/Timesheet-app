@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.Data;
 using System.Globalization;
+using Timesheet_app.Helper;
 using Timesheet_app.Models;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
@@ -82,8 +83,6 @@ namespace Timesheet_app.Services
         {
             var timesheets = await GenerateTimesheetsForMonth(userId, month, year);
 
-
-
             if (timesheets.Count == 0)
             {
                 throw new InvalidOperationException($"Timesheets for user {userId} in {CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)}, {year} already exist");
@@ -95,6 +94,40 @@ namespace Timesheet_app.Services
             }
 
             return timesheets;
+        }
+        public async Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId)
+        {
+            var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
+
+            foreach (var timesheet in timesheets)
+            {
+                var getDate = timesheet.Date;
+                var holiday = _holidayService.GetHolidayByDate(getDate).Result;
+            }
+            var user = timesheets[1].User;
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Timesheet");
+
+            var timesheetDto = ConvertToDTOs(timesheets);
+
+
+            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description" };
+
+            var table = new DataTable();
+            foreach (var columnName in newArrayColumnName)
+            {
+                table.Columns.Add(columnName);
+            }
+
+            foreach (var timesheet in timesheetDto)
+            {
+                var status = ExtensionHelper.GetEnumDescription(timesheet.WFO);
+                var holiday = await _holidayService.GetHolidayByDate(timesheet.Date);
+                var holidayDescription = holiday != null ? holiday.Description : string.Empty;
+                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, timesheet.Date, timesheet.ClockIn, timesheet.ClockOut, timesheet.AccumulatedTime, status, timesheet.Working, holidayDescription);
+            }
+
+            return table;
         }
 
         private async Task<List<TimesheetDTO>> GenerateTimesheetsForMonth(string userId, int month, int year)
@@ -112,8 +145,7 @@ namespace Timesheet_app.Services
 
                 var isHoliday = await _holidayService.GetHolidayByDate(currentDate) != null;
 
-                var isWeekend = currentDate.DayOfWeek == DayOfWeek.Saturday ||
-                               currentDate.DayOfWeek == DayOfWeek.Sunday;
+                var isWeekend = ExtensionHelper.IsWeekend(currentDate);
 
                 var timesheetId = userId + "-" + currentDate.ToString("yyyyMMdd");
                 
@@ -130,7 +162,8 @@ namespace Timesheet_app.Services
                     ClockIn = clockIn,
                     ClockOut = clockOut,
                     AccumulatedTime = totalTime,
-                    Working = !isWeekend && !isHoliday
+                    Working = !isWeekend && !isHoliday,
+                    WFO = (!isWeekend && !isHoliday) ? TimesheetDTO.WorkStatus.WFH : TimesheetDTO.WorkStatus.NotWorking
                 };
 
                 timesheets.Add(newTimesheet);
@@ -150,7 +183,8 @@ namespace Timesheet_app.Services
                 ClockIn = m.ClockIn,
                 ClockOut = m.ClockOut,
                 AccumulatedTime = m.AccumulatedTime,
-                Working = m.Working
+                Working = m.Working,
+                WFO = (TimesheetDTO.WorkStatus)(WorkStatus)m.WFO,
             }).ToList();
         }
         private static TimesheetModel ConvertToDAO(TimesheetDTO dto, UserDto user)
@@ -164,42 +198,11 @@ namespace Timesheet_app.Services
                 ClockOut = dto.ClockOut,
                 AccumulatedTime = dto.AccumulatedTime,
                 Working = dto.Working,
+                WFO = (WorkStatus)dto.WFO,
                 UserID = user.Id
             };
         }
 
-        public async Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId)
-        {
-            var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
-
-            foreach(var timesheet in timesheets)
-            {
-                var getDate = timesheet.Date;
-                var holiday = _holidayService.GetHolidayByDate(getDate).Result;
-            }
-            var user = timesheets[1].User;
-            using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Timesheet");
-            
-            var timesheetDto = ConvertToDTOs(timesheets);
-
-
-            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "Working", "Holiday Description" };
-
-            var table = new DataTable();
-            foreach(var columnName in newArrayColumnName)
-            {
-                table.Columns.Add(columnName);
-            }
-
-            foreach(var timesheet in timesheetDto)
-            {
-                var holiday = await _holidayService.GetHolidayByDate(timesheet.Date);
-                var holidayDescription = holiday != null ? holiday.Description : string.Empty;
-                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, timesheet.Date, timesheet.ClockIn, timesheet.ClockOut, timesheet.AccumulatedTime, timesheet.Working, holidayDescription);
-            }
-
-            return table;
-        }
+        
     }
 }

@@ -1,6 +1,8 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
 using System.Data;
+using System.Reflection;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
 using Timesheet_app.Services;
@@ -126,6 +128,7 @@ namespace Timesheet_app.Controllers
                 worksheet.Cell(rowIndex, 6).Value = "Clock In";
                 worksheet.Cell(rowIndex, 7).Value = "Clock Out";
                 worksheet.Cell(rowIndex, 8).Value = "Accumulated Time";
+                worksheet.Cell(rowIndex, 9).Value = "WFO";
                 rowIndex++;
 
                 // data
@@ -143,8 +146,8 @@ namespace Timesheet_app.Controllers
 
                     if (!working)
                     {
-                        // Merge the three cells visually
-                        worksheet.Range(rowIndex, 6, rowIndex, 8).Merge();
+                        // Merge the four cells visually
+                        worksheet.Range(rowIndex, 6, rowIndex, 9).Merge();
                         if (row.Table.Columns.Contains("Holiday Description") &&
                             row["Holiday Description"] != DBNull.Value &&
                             !string.IsNullOrEmpty(row["Holiday Description"].ToString()))
@@ -162,6 +165,7 @@ namespace Timesheet_app.Controllers
                         worksheet.Cell(rowIndex, 6).Value = XLCellValue.FromObject(row["Clock In"]);
                         worksheet.Cell(rowIndex, 7).Value = XLCellValue.FromObject(row["Clock Out"]);
                         worksheet.Cell(rowIndex, 8).Value = XLCellValue.FromObject(row["Accumulated Time"]);
+                        worksheet.Cell(rowIndex, 9).Value = XLCellValue.FromObject(row["WFO"]);
                     }
 
                     rowIndex++;

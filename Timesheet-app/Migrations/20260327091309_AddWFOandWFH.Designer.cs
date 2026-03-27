@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Timesheet_app.Data;
 
@@ -11,9 +12,11 @@ using Timesheet_app.Data;
 namespace Timesheet_app.Migrations
 {
     [DbContext(typeof(SQLServerDBConnection))]
-    partial class SQLServerDBConnectionModelSnapshot : ModelSnapshot
+    [Migration("20260327091309_AddWFOandWFH")]
+    partial class AddWFOandWFH
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,9 +71,6 @@ namespace Timesheet_app.Migrations
                     b.Property<string>("UserID")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("WFO")
-                        .HasColumnType("int");
 
                     b.Property<bool>("Working")
                         .HasColumnType("bit");

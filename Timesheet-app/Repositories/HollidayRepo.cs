@@ -31,15 +31,21 @@ namespace Timesheet_app.Repositories
             
         }
 
-        public Task<List<HollidayModel>> GetHollidayByMonthAsync(int month)
+        public async Task<List<HollidayModel>> GetHollidayByMonthAsync(int month)
         {
-            return _dbContext.Holidays.Where(h => h.Month == month).ToListAsync();
+            return await _dbContext.Holidays.Where(h => h.Month == month).ToListAsync();
         }
 
-        public Task<List<HollidayModel>> GetRecuringHoliday()
+        public async Task<List<HollidayModel>> GetRecuringHoliday()
         {
             var currentYear = DateTime.Now.Year;
-            return _dbContext.Holidays.Where(h => h.Year == currentYear - 1 && h.Recurring).ToListAsync();
+            return await _dbContext.Holidays.Where(h => h.Year == currentYear - 1 && h.Recurring).ToListAsync();
+        }
+
+        public Task UpdateHolliday(HollidayModel holiday)
+        {
+            _dbContext.Holidays.Update(holiday);
+            return _dbContext.SaveChangesAsync();
         }
     }
 }

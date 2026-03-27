@@ -10,5 +10,6 @@ namespace Timesheet_app.Repositories
         public Task<HollidayModel> GetHollidayByDateAsync(int day, int month, int year);
         public Task<List<HollidayModel>> GetRecuringHoliday();
         public Task AddHolliday(HollidayModel holiday);
+        public Task UpdateHolliday(HollidayModel holiday);
     }
 }

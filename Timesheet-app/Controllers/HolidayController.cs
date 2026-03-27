@@ -26,7 +26,7 @@ namespace Timesheet_app.Controllers
             }
             try
             {
-                await _hollidayService.AddHoliday(holiday);
+                await _hollidayService.AddOrUpdate(holiday);
                 return Ok("Holiday added successfully");
             }
             catch (Exception ex)
@@ -73,7 +73,7 @@ namespace Timesheet_app.Controllers
                     Description = row.Cell(4).GetValue<string>(),
                     Recurring = row.Cell(5).GetValue<bool>()
                 };
-                await _hollidayService.AddHoliday(holiday);
+                await _hollidayService.AddOrUpdate(holiday);
                 count++;
             }
             return Ok($"Success! Holiday added: {count} Items");

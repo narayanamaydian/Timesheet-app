@@ -60,7 +60,16 @@ namespace Timesheet_app.Repositories
             return timesheet;
         }
 
+        public Task AddOrUpdateClockIn(DateTime clockIn, string userId)
+        {
+            throw new NotImplementedException();
 
+        }
+
+        public Task AddOrUpdateClockOut(DateTime clockOut, string userId)
+        {
+            throw new NotImplementedException();
+        }
     }
     
     
