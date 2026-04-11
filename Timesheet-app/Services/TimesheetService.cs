@@ -130,6 +130,73 @@ namespace Timesheet_app.Services
             return table;
         }
 
+        
+
+        public async Task<TimesheetDTO> AddOrUpdateClockIn(string userId, int status)
+        {
+            var timesheetId = GetIdByClockAndUserId(userId, out DateOnly dateOnly, out TimeOnly timeOnly);
+            var existingTimesheet = await _timesheetRepo.GetTimesheetById(timesheetId);
+            var workStatus = (TimesheetDTO.WorkStatus)status;
+
+            if (existingTimesheet != null)
+            {
+                existingTimesheet.ClockIn = timeOnly;
+                existingTimesheet.Working = true;
+                existingTimesheet.WFO = (WorkStatus)TimesheetDTO.WorkStatus.WFH;
+                await _timesheetRepo.AddOrUpdateClockIn(timeOnly, existingTimesheet.Id, (WorkStatus)workStatus);
+                return ConvertToDTO(existingTimesheet);
+            }
+            else
+            {
+                var newTimesheet = new TimesheetModel
+                {
+                    Id = timesheetId,
+                    Date = dateOnly,
+                    ClockIn = timeOnly,
+                    ClockOut = null,
+                    AccumulatedTime = TimeSpan.Zero,
+                    Working = true,
+                    WFO = (WorkStatus)workStatus,
+                    UserID = userId
+                };
+
+                await _timesheetRepo.AddTimesheet(newTimesheet);
+                return ConvertToDTO(newTimesheet);
+
+            }
+        }
+
+       
+
+        public async Task<TimesheetDTO> AddOrUpdateClockOut(string userId, string activity)
+        {
+            DateOnly dateOnly;
+            TimeOnly timeOnly;
+            var timesheetId = GetIdByClockAndUserId(userId, out dateOnly, out timeOnly);
+            var existingTimesheet = await _timesheetRepo.GetTimesheetById(timesheetId);
+            if (existingTimesheet == null)
+            {
+                throw new InvalidOperationException("Please Input Clock In First");
+            }
+            else
+            {
+                var clockIn = (TimeOnly)existingTimesheet.ClockIn;
+                var AccumulatedTime = timeOnly.ToTimeSpan() - clockIn.ToTimeSpan();
+
+            }
+            return ConvertToDTO(existingTimesheet);
+
+                throw new NotImplementedException();
+        }
+
+        private static string GetIdByClockAndUserId(string userId, out DateOnly dateOnly, out TimeOnly timeOnly)
+        {
+            var dateNow = DateTime.Now;
+            dateOnly = DateOnly.FromDateTime(dateNow);
+            timeOnly = TimeOnly.FromDateTime(dateNow);
+            return userId + "-" + dateOnly.ToString("yyyyMMdd");
+        }
+
         private async Task<List<TimesheetDTO>> GenerateTimesheetsForMonth(string userId, int month, int year)
         {
             var timesheets = new List<TimesheetDTO>();
@@ -148,11 +215,11 @@ namespace Timesheet_app.Services
                 var isWeekend = ExtensionHelper.IsWeekend(currentDate);
 
                 var timesheetId = userId + "-" + currentDate.ToString("yyyyMMdd");
-                
+
                 var isItExist = _timesheetRepo.GetTimesheetById(timesheetId).Result;
                 if (isItExist != null)
                 {
-                    continue; 
+                    continue;
                 }
 
                 var newTimesheet = new TimesheetDTO
@@ -189,7 +256,7 @@ namespace Timesheet_app.Services
         }
         private static TimesheetModel ConvertToDAO(TimesheetDTO dto, UserDto user)
         {
-            
+
             return new TimesheetModel
             {
                 Id = dto.Id,
@@ -202,7 +269,18 @@ namespace Timesheet_app.Services
                 UserID = user.Id
             };
         }
-
-        
+        private static TimesheetDTO ConvertToDTO(TimesheetModel model)
+        {
+            return new TimesheetDTO
+            {
+                Id = model.Id,
+                Date = model.Date,
+                ClockIn = model.ClockIn,
+                ClockOut = model.ClockOut,
+                AccumulatedTime = model.AccumulatedTime,
+                WFO = (TimesheetDTO.WorkStatus)(WorkStatus)model.WFO,
+                Working = model.Working
+            };
+        }
     }
 }

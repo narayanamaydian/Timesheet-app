@@ -99,6 +99,7 @@ namespace Timesheet_app.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpGet("Excel/{userId}")]
         public async Task<ActionResult<DataTable>> GenerateExelData(string userId, [FromQuery] int month, [FromQuery] int year)
         {
@@ -189,6 +190,35 @@ namespace Timesheet_app.Controllers
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+        [HttpPost("ClockIn/{userId}")]
+        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] int status)
+        {
+            try
+            {
+                var timesheet = await _timesheetService.AddOrUpdateClockIn(userId, status);
+                return Ok(timesheet);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
+        }
+
+        [HttpPost("ClockOut/{userId}")]
+        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] string activity)
+        {
+            try
+            {
+                var timesheet = await _timesheetService.AddOrUpdateClockOut(userId, activity);
+                return Ok(timesheet);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
         }
     }
 }

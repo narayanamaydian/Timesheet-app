@@ -12,8 +12,8 @@ namespace Timesheet_app.Repositories
         public Task<TimesheetModel> GetTimesheetById(string id);
 
         public Task AddTimesheet(TimesheetModel timesheet);
-        public Task AddOrUpdateClockIn(DateTime clockIn, string userId);
-        public Task AddOrUpdateClockOut(DateTime clockOut, string userId);
+        public Task AddOrUpdateClockIn(TimeOnly clockIn, string timesheetId, WorkStatus workStatus);
+        public Task AddOrUpdateClockOut(TimeOnly clockOut, TimeSpan accumulatedTime, string timesheetId);
 
         
     }

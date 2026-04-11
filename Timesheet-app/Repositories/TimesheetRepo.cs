@@ -60,15 +60,20 @@ namespace Timesheet_app.Repositories
             return timesheet;
         }
 
-        public Task AddOrUpdateClockIn(DateTime clockIn, string userId)
+        public async Task AddOrUpdateClockIn(TimeOnly clockIn, string timesheetId, WorkStatus workStatus)
         {
-            throw new NotImplementedException();
-
+            var timesheet = await _dbContext.Timesheets.FindAsync(timesheetId);
+            timesheet.ClockIn = clockIn;
+            timesheet.WFO = workStatus;
+            await _dbContext.SaveChangesAsync();
         }
 
-        public Task AddOrUpdateClockOut(DateTime clockOut, string userId)
+        public async Task AddOrUpdateClockOut(TimeOnly clockOut, TimeSpan accumulatedTime, string timesheetId)
         {
-            throw new NotImplementedException();
+            var timesheet = await _dbContext.Timesheets.FindAsync(timesheetId);
+            timesheet.ClockOut = clockOut;
+            timesheet.AccumulatedTime = accumulatedTime;
+            await _dbContext.SaveChangesAsync();
         }
     }
     
