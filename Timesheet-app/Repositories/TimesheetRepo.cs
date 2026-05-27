@@ -75,6 +75,12 @@ namespace Timesheet_app.Repositories
             timesheet.AccumulatedTime = accumulatedTime;
             await _dbContext.SaveChangesAsync();
         }
+
+        public async Task UpdateTimesheet(TimesheetModel timesheet)
+        {
+            _dbContext.Timesheets.Update(timesheet);
+            await _dbContext.SaveChangesAsync();
+        }
     }
     
     

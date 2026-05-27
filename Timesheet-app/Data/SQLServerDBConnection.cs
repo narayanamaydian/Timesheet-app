@@ -12,6 +12,5 @@ namespace Timesheet_app.Data
         public DbSet<TimesheetModel> Timesheets { get; set; }
         public DbSet<UserModel> Users { get; set; }
         public DbSet<HollidayModel> Holidays { get; set; }
-        //public DbSet<ProjectModel> Projects { get; set; }
     }
 }

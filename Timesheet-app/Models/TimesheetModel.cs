@@ -13,6 +13,7 @@ namespace Timesheet_app.Models
 
         public string UserID { get; set; } // Foreign key to UserModel
         public UserModel User { get; set; } // Navigation property to UserModel
+        public string TaskDetail { get; set; }
     }
 
     public enum WorkStatus

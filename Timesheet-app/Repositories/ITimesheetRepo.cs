@@ -15,6 +15,8 @@ namespace Timesheet_app.Repositories
         public Task AddOrUpdateClockIn(TimeOnly clockIn, string timesheetId, WorkStatus workStatus);
         public Task AddOrUpdateClockOut(TimeOnly clockOut, TimeSpan accumulatedTime, string timesheetId);
 
+        public Task UpdateTimesheet(TimesheetModel timesheet);
+
         
     }
 }

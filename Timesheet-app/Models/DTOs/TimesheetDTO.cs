@@ -11,6 +11,7 @@ namespace Timesheet_app.Models.DAO
         public TimeSpan AccumulatedTime { get; set; } // Stores total time worked
         public bool Working { get; set; }
         public WorkStatus WFO { get; set; } = WorkStatus.WFH;
+        public string TaskDetail { get; set; }
 
         public enum WorkStatus
         {

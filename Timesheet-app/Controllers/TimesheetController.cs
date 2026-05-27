@@ -20,7 +20,7 @@ namespace Timesheet_app.Controllers
             _timesheetService = timesheetService;
         }
 
-        [HttpGet("GetTimesheetByMonth/{userId}/{month}/{year}")]
+        [HttpGet("month/{userId}/{month}/{year}")]
         public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByMonth(string userId, int month, int year)
         {
             try
@@ -34,7 +34,7 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpGet("GetTimesheetByUser/{userId}")]
+        [HttpGet("user/{userId}")]
         public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByUser(string userId, [FromQuery] int? month)
         {
             try
@@ -48,7 +48,7 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpPost("add/{userId}")]
+        [HttpPost("{userId}")]
         public async Task<ActionResult<TimesheetDTO>> AddTimesheet(string userId, [FromBody] TimesheetDTO timesheet)
         {
             if (timesheet == null)
@@ -100,8 +100,8 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpGet("Excel/{userId}")]
-        public async Task<ActionResult<DataTable>> GenerateExelData(string userId, [FromQuery] int month, [FromQuery] int year)
+        [HttpGet("export/{userId}")]
+        public async Task<ActionResult<DataTable>> GenerateExcelData(string userId, [FromQuery] int month, [FromQuery] int year)
         {
             if (month == 0 || year == 0)
             {
@@ -191,7 +191,7 @@ namespace Timesheet_app.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpPost("ClockIn/{userId}")]
+        [HttpPost("clockIn/{userId}")]
         public async Task<ActionResult> InsertClockIn(string userId, [FromBody] int status)
         {
             try
@@ -206,7 +206,7 @@ namespace Timesheet_app.Controllers
 
         }
 
-        [HttpPost("ClockOut/{userId}")]
+        [HttpPut("clockOut/{userId}")]
         public async Task<ActionResult> InsertClockOut(string userId, [FromBody] string activity)
         {
             try
@@ -219,6 +219,13 @@ namespace Timesheet_app.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
 
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdateTimesheet(string id, TimesheetDTO dto)
+        {
+            // service call
+            return Ok();
         }
     }
 }

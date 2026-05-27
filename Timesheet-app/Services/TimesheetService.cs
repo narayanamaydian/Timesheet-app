@@ -16,6 +16,7 @@ namespace Timesheet_app.Services
         private readonly IHollidayService _holidayService;
         private readonly IUserService _userService;
 
+
         public TimesheetService(ITimesheetRepo timesheetRepo, IUserService userService, IHollidayService holidayService)
         {
             _timesheetRepo = timesheetRepo;
@@ -143,7 +144,7 @@ namespace Timesheet_app.Services
                 existingTimesheet.ClockIn = timeOnly;
                 existingTimesheet.Working = true;
                 existingTimesheet.WFO = (WorkStatus)TimesheetDTO.WorkStatus.WFH;
-                await _timesheetRepo.AddOrUpdateClockIn(timeOnly, existingTimesheet.Id, (WorkStatus)workStatus);
+                _ = _timesheetRepo.UpdateTimesheet(existingTimesheet);
                 return ConvertToDTO(existingTimesheet);
             }
             else
@@ -182,11 +183,15 @@ namespace Timesheet_app.Services
             {
                 var clockIn = (TimeOnly)existingTimesheet.ClockIn;
                 var AccumulatedTime = timeOnly.ToTimeSpan() - clockIn.ToTimeSpan();
+                existingTimesheet.TaskDetail = activity;
+                existingTimesheet.ClockOut = timeOnly;
+                existingTimesheet.AccumulatedTime = AccumulatedTime;
+
 
             }
+            await _timesheetRepo.UpdateTimesheet(existingTimesheet);
             return ConvertToDTO(existingTimesheet);
 
-                throw new NotImplementedException();
         }
 
         private static string GetIdByClockAndUserId(string userId, out DateOnly dateOnly, out TimeOnly timeOnly)
@@ -279,7 +284,8 @@ namespace Timesheet_app.Services
                 ClockOut = model.ClockOut,
                 AccumulatedTime = model.AccumulatedTime,
                 WFO = (TimesheetDTO.WorkStatus)(WorkStatus)model.WFO,
-                Working = model.Working
+                Working = model.Working,
+                TaskDetail = model.TaskDetail,
             };
         }
     }
