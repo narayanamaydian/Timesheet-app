@@ -14,6 +14,7 @@ builder.Services.AddScoped<IHollidayRepo, HollidayRepo>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
 builder.Services.AddScoped<IHollidayService, HollidayService>();
+builder.Services.AddScoped<ITimesheetExportService, TimesheetExportService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
