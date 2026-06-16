@@ -2,7 +2,7 @@
 {
     public class TimesheetInputDto
     {
-        public string Id { get; set; }
+        public required string Id { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
     }
