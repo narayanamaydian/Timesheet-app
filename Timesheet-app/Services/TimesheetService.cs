@@ -15,20 +15,22 @@ namespace Timesheet_app.Services
         private readonly ITimesheetRepo _timesheetRepo;
         private readonly IHollidayService _holidayService;
         private readonly IUserService _userService;
+        private readonly IUserProjectService _userProjectService;
 
 
-        public TimesheetService(ITimesheetRepo timesheetRepo, IUserService userService, IHollidayService holidayService)
+        public TimesheetService(ITimesheetRepo timesheetRepo, IUserService userService, IHollidayService holidayService, IUserProjectService userProjectService)
         {
             _timesheetRepo = timesheetRepo;
             _holidayService = holidayService;
             _userService = userService;
+            _userProjectService = userProjectService;
         }
 
         public async Task<TimesheetUserDTO> GetTimesheetByMonthAsync(string userId, int? month, int year)
         {
             var timesheet = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
             var user = timesheet[1].User;
-            var timesheetDto = ConvertToDTOs(timesheet);
+            var timesheetDto = TimesheetHelper.ConvertToDTOs(timesheet);
 
             return new TimesheetUserDTO
             {
@@ -51,7 +53,7 @@ namespace Timesheet_app.Services
 
             var timesheet = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
             var user = timesheet[1].User;
-            var timesheetDto = ConvertToDTOs(timesheet);
+            var timesheetDto = TimesheetHelper.ConvertToDTOs(timesheet);
 
             return new TimesheetUserDTO
             {
@@ -74,7 +76,7 @@ namespace Timesheet_app.Services
                 throw new InvalidOperationException($"User with ID {userId} not found");
             }
             
-            var timesheetDAO = ConvertToDAO(timesheet, user);
+            var timesheetDAO = TimesheetHelper.ConvertToDAO(timesheet, user);
             await _timesheetRepo.AddTimesheet(timesheetDAO);
             return timesheet;
 
@@ -86,7 +88,7 @@ namespace Timesheet_app.Services
 
             if (timesheets.Count == 0)
             {
-                throw new InvalidOperationException($"Timesheets for user {userId} in {CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)}, {year} already exist");
+                return timesheets;
             }
 
             foreach (var timesheet in timesheets)
@@ -99,6 +101,8 @@ namespace Timesheet_app.Services
         public async Task<DataTable> GetTimesheetByMonthForUsersAsync(int month, int year, string userId)
         {
             var timesheets = await _timesheetRepo.GetTimesheetByMonth(userId, month, year);
+            var projects = await _userProjectService.GetProjectsByUserIdAsync(userId);
+            var projectName = projects.Count > 0 ? projects[0].ProjectName : string.Empty;
 
             foreach (var timesheet in timesheets)
             {
@@ -109,10 +113,10 @@ namespace Timesheet_app.Services
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Timesheet");
 
-            var timesheetDto = ConvertToDTOs(timesheets);
+            var timesheetDto = TimesheetHelper.ConvertToDTOs(timesheets);
 
 
-            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description" };
+            var newArrayColumnName = new string[] { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description", "Activity", "ProjectName" };
 
             var table = new DataTable();
             foreach (var columnName in newArrayColumnName)
@@ -125,7 +129,11 @@ namespace Timesheet_app.Services
                 var status = ExtensionHelper.GetEnumDescription(timesheet.WFO);
                 var holiday = await _holidayService.GetHolidayByDate(timesheet.Date);
                 var holidayDescription = holiday != null ? holiday.Description : string.Empty;
-                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, timesheet.Date, timesheet.ClockIn, timesheet.ClockOut, timesheet.AccumulatedTime, status, timesheet.Working, holidayDescription);
+                var clockIn = timesheet.ClockIn.HasValue ? timesheet.ClockIn.Value.ToString("hh:mm:ss tt") : string.Empty;
+                var clockOut = timesheet.ClockOut.HasValue ? timesheet.ClockOut.Value.ToString("hh:mm:ss tt") : string.Empty;
+                var date = timesheet.Date.ToString("dddd, dd MMMM yyyy");
+
+                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, date, clockIn, clockOut, timesheet.AccumulatedTime, status, timesheet.Working, holidayDescription, timesheet.TaskDetail, projectName);
             }
 
             return table;
@@ -135,7 +143,7 @@ namespace Timesheet_app.Services
 
         public async Task<TimesheetDTO> AddOrUpdateClockIn(string userId, int status)
         {
-            var timesheetId = GetIdByClockAndUserId(userId, out DateOnly dateOnly, out TimeOnly timeOnly);
+            var timesheetId = TimesheetHelper.GetIdByClockAndUserId(userId, out DateOnly dateOnly, out TimeOnly timeOnly);
             var existingTimesheet = await _timesheetRepo.GetTimesheetById(timesheetId);
             var workStatus = (TimesheetDTO.WorkStatus)status;
 
@@ -145,7 +153,7 @@ namespace Timesheet_app.Services
                 existingTimesheet.Working = true;
                 existingTimesheet.WFO = (WorkStatus)TimesheetDTO.WorkStatus.WFH;
                 _ = _timesheetRepo.UpdateTimesheet(existingTimesheet);
-                return ConvertToDTO(existingTimesheet);
+                return TimesheetHelper.ConvertToDTO(existingTimesheet);
             }
             else
             {
@@ -162,7 +170,7 @@ namespace Timesheet_app.Services
                 };
 
                 await _timesheetRepo.AddTimesheet(newTimesheet);
-                return ConvertToDTO(newTimesheet);
+                return TimesheetHelper.ConvertToDTO(newTimesheet);
 
             }
         }
@@ -173,7 +181,7 @@ namespace Timesheet_app.Services
         {
             DateOnly dateOnly;
             TimeOnly timeOnly;
-            var timesheetId = GetIdByClockAndUserId(userId, out dateOnly, out timeOnly);
+            var timesheetId = TimesheetHelper.GetIdByClockAndUserId(userId, out dateOnly, out timeOnly);
             var existingTimesheet = await _timesheetRepo.GetTimesheetById(timesheetId);
             if (existingTimesheet == null)
             {
@@ -190,16 +198,8 @@ namespace Timesheet_app.Services
 
             }
             await _timesheetRepo.UpdateTimesheet(existingTimesheet);
-            return ConvertToDTO(existingTimesheet);
+            return TimesheetHelper.ConvertToDTO(existingTimesheet);
 
-        }
-
-        private static string GetIdByClockAndUserId(string userId, out DateOnly dateOnly, out TimeOnly timeOnly)
-        {
-            var dateNow = DateTime.Now;
-            dateOnly = DateOnly.FromDateTime(dateNow);
-            timeOnly = TimeOnly.FromDateTime(dateNow);
-            return userId + "-" + dateOnly.ToString("yyyyMMdd");
         }
 
         private async Task<List<TimesheetDTO>> GenerateTimesheetsForMonth(string userId, int month, int year)
@@ -207,9 +207,6 @@ namespace Timesheet_app.Services
             var timesheets = new List<TimesheetDTO>();
 
             var daysInMonth = DateTime.DaysInMonth(year, month);
-            var clockIn = new TimeOnly(9, 0, 0);
-            var clockOut = new TimeOnly(17, 0, 0);
-            var totalTime = clockOut.ToTimeSpan() - clockIn.ToTimeSpan();
 
             for (int day = 1; day <= daysInMonth; day++)
             {
@@ -225,6 +222,16 @@ namespace Timesheet_app.Services
                 if (isItExist != null)
                 {
                     continue;
+                }
+                TimeOnly? clockIn = new TimeOnly(9, 0, 0);
+                TimeOnly? clockOut = new TimeOnly(17, 0, 0);
+                var totalTime = clockOut.Value.ToTimeSpan() - clockIn.Value.ToTimeSpan();
+
+                if (isHoliday || isWeekend)
+                {
+                    clockIn = null;
+                    clockOut = null;
+                    totalTime = TimeSpan.Zero;
                 }
 
                 var newTimesheet = new TimesheetDTO
@@ -242,51 +249,6 @@ namespace Timesheet_app.Services
             }
 
             return timesheets;
-        }
-
-
-
-        private static List<TimesheetDTO> ConvertToDTOs(List<TimesheetModel> models)
-        {
-            return models.Select(m => new TimesheetDTO
-            {
-                Id = m.Id,
-                Date = m.Date,
-                ClockIn = m.ClockIn,
-                ClockOut = m.ClockOut,
-                AccumulatedTime = m.AccumulatedTime,
-                Working = m.Working,
-                WFO = (TimesheetDTO.WorkStatus)(WorkStatus)m.WFO,
-            }).ToList();
-        }
-        private static TimesheetModel ConvertToDAO(TimesheetDTO dto, UserDto user)
-        {
-
-            return new TimesheetModel
-            {
-                Id = dto.Id,
-                Date = dto.Date,
-                ClockIn = dto.ClockIn,
-                ClockOut = dto.ClockOut,
-                AccumulatedTime = dto.AccumulatedTime,
-                Working = dto.Working,
-                WFO = (WorkStatus)dto.WFO,
-                UserID = user.Id
-            };
-        }
-        private static TimesheetDTO ConvertToDTO(TimesheetModel model)
-        {
-            return new TimesheetDTO
-            {
-                Id = model.Id,
-                Date = model.Date,
-                ClockIn = model.ClockIn,
-                ClockOut = model.ClockOut,
-                AccumulatedTime = model.AccumulatedTime,
-                WFO = (TimesheetDTO.WorkStatus)(WorkStatus)model.WFO,
-                Working = model.Working,
-                TaskDetail = model.TaskDetail,
-            };
         }
     }
 }
