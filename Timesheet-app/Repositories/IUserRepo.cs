@@ -4,6 +4,9 @@ namespace Timesheet_app.Repositories
 {
     public interface IUserRepo
     {
-        public Task<UsersModel> GetUser(Object userId); 
+        public Task<UserModel> GetUser(Object userId);
+
+        public Task AddUser(UserModel user);
+        public Task<UserModel> GetUserById(string userId);
     }
 }

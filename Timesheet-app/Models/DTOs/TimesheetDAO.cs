@@ -1,7 +1,6 @@
-﻿
-namespace Timesheet_app.Models
+﻿namespace Timesheet_app.Models.DAO
 {
-    public class TimesheetModel
+    public class TimesheetDTO
     {
         public String Id { get; set; }
         public DateOnly Date { get; set; }
@@ -9,8 +8,5 @@ namespace Timesheet_app.Models
         public TimeOnly? ClockOut { get; set; } // Stores exact clock-out time
         public TimeSpan AccumulatedTime { get; set; } // Stores total time worked
         public bool Working { get; set; }
-
-        public required UserModel User { get; set; }
-
     }
 }

@@ -1,32 +1,37 @@
+using Microsoft.EntityFrameworkCore;
 using Timesheet_app.Data;
 using Timesheet_app.Repositories;
+using Timesheet_app.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddSingleton<DatabaseConnection>();
+// Register Repositories
 builder.Services.AddScoped<ITimesheetRepo, TimesheetRepo>();
+builder.Services.AddScoped<IUserRepo, UserRepo>();
+
+// Register Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITimesheetService, TimesheetService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var sqlConn = builder.Configuration.GetSection("ConnectionStringsSql")["SqlServer"];
+if (string.IsNullOrWhiteSpace(sqlConn))
+    throw new InvalidOperationException("SQL connection string not found. Set ConnectionStringsSql:SqlServer in appsettings.json.");
+
+builder.Services.AddDbContext<SQLServerDBConnection>(options =>
+    options.UseSqlServer(sqlConn));
+
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
