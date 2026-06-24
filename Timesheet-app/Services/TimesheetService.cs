@@ -218,7 +218,7 @@ namespace Timesheet_app.Services
 
                 var timesheetId = userId + "-" + currentDate.ToString("yyyyMMdd");
 
-                var isItExist = _timesheetRepo.GetTimesheetById(timesheetId).Result;
+                var isItExist = await _timesheetRepo.GetTimesheetById(timesheetId);
                 if (isItExist != null)
                 {
                     continue;

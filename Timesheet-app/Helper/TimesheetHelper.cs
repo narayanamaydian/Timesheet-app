@@ -12,7 +12,7 @@ namespace Timesheet_app.Helper
         /// </summary>
         public static string GetIdByClockAndUserId(string userId, out DateOnly dateOnly, out TimeOnly timeOnly)
         {
-            var dateNow = DateTime.Now;
+            var dateNow = DateTimeHelper.NowJakarta();
             dateOnly = DateOnly.FromDateTime(dateNow);
             timeOnly = TimeOnly.FromDateTime(dateNow);
             return userId + "-" + dateOnly.ToString("yyyyMMdd");

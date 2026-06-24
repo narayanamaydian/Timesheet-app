@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Drawing;
+using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
@@ -125,10 +126,11 @@ namespace Timesheet_app.Controllers
             }
         }
         [HttpPost("clockIn/{userId}")]
-        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] int status)
+        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] RequestDTO.ClockIn clockIn)
         {
             try
             {
+                var status = clockIn.status;
                 var timesheet = await _timesheetService.AddOrUpdateClockIn(userId, status);
                 return Ok(timesheet);
             }
@@ -140,10 +142,11 @@ namespace Timesheet_app.Controllers
         }
 
         [HttpPut("clockOut/{userId}")]
-        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] string activity)
+        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] RequestDTO.ClockOut clockOut)
         {
             try
             {
+                var activity = clockOut.activity;
                 var timesheet = await _timesheetService.AddOrUpdateClockOut(userId, activity);
                 return Ok(timesheet);
             }
