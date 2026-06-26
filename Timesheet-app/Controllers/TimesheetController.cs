@@ -100,31 +100,7 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpGet("export/{userId}")]
-        public async Task<IActionResult> GenerateExcelData(string userId, [FromQuery] int month, [FromQuery] int year)
-        {
-            if (month == 0 || year == 0)
-            {
-                return BadRequest("Request data is required");
-            }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            try
-            {
-                var excel = await _exportService.GenerateTimesheetExcelAsync(userId, month, year);
-                return File(excel.Content, excel.ContentType, excel.FileName);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        
         [HttpPost("clockIn/{userId}")]
         public async Task<ActionResult> InsertClockIn(string userId, [FromBody] RequestDTO.ClockIn clockIn)
         {
@@ -164,19 +140,7 @@ namespace Timesheet_app.Controllers
             return Ok();
         }
 
-        [HttpGet("GetExcelTemplate")]
-        public async Task<IActionResult> GetExcelTemplate()
-        {
-            try
-            {
-                var excel = await _exportService.ReadTemplateFile();
-                return Ok(excel);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        
 
         [HttpGet("exportTemplate/{userId}")]
         public async Task<IActionResult> GenerateExcelFromTemplate(string userId, [FromQuery] int month, [FromQuery] int year)

@@ -19,107 +19,6 @@ namespace Timesheet_app.Services
             _configuration = configuration;
         }
 
-        public async Task<ExcelFileDto> GenerateTimesheetExcelAsync(string userId, int month, int year)
-        {
-            var dt = await _timesheetService.GetTimesheetByMonthForUsersAsync(month, year, userId);
-
-            if (dt == null || dt.Rows.Count == 0)
-                throw new InvalidOperationException("No timesheet data found for the specified user and period.");
-
-            using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Timesheet");
-
-            int rowIndex = 1;
-
-            // headers
-            worksheet.Cell(rowIndex, 1).Value = "User ID";
-            worksheet.Cell(rowIndex, 2).Value = "Name";
-            worksheet.Cell(rowIndex, 3).Value = "Vendor Name";
-            worksheet.Cell(rowIndex, 4).Value = "No SPK";
-            worksheet.Cell(rowIndex, 5).Value = "Date";
-            worksheet.Cell(rowIndex, 6).Value = "Clock In";
-            worksheet.Cell(rowIndex, 7).Value = "Clock Out";
-            worksheet.Cell(rowIndex, 8).Value = "Accumulated Time";
-            worksheet.Cell(rowIndex, 9).Value = "WFO";
-            worksheet.Cell(rowIndex, 10).Value = "Activity";
-
-            // simple styling: header background, bold, freeze row, adjust widths
-            var headerRange = worksheet.Range(rowIndex, 1, rowIndex, 9);
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
-            worksheet.SheetView.FreezeRows(1);
-
-            worksheet.Column(1).Width = 18; // User ID
-            worksheet.Column(2).Width = 24; // Name
-            worksheet.Column(3).Width = 20; // Vendor Name
-            worksheet.Column(4).Width = 16; // No SPK
-            worksheet.Column(5).Width = 14; // Date
-            worksheet.Column(6).Width = 14; // Clock In
-            worksheet.Column(7).Width = 14; // Clock Out
-            worksheet.Column(8).Width = 18; // Accumulated Time
-            worksheet.Column(9).Width = 10; // WFO
-            worksheet.Column(10).Width = 16; // Activity
-
-            rowIndex++;
-
-            // data
-            foreach (DataRow row in dt.Rows)
-            {
-                worksheet.Cell(rowIndex, 1).Value = XLCellValue.FromObject(row["User ID"]);
-                worksheet.Cell(rowIndex, 2).Value = XLCellValue.FromObject(row["Name"]);
-                worksheet.Cell(rowIndex, 3).Value = XLCellValue.FromObject(row["Vendor Name"]);
-                worksheet.Cell(rowIndex, 4).Value = XLCellValue.FromObject(row["No SPK"]);
-                worksheet.Cell(rowIndex, 5).Value = XLCellValue.FromObject(row["Date"]);
-
-                bool working = row.Table.Columns.Contains("Working") &&
-                               row["Working"] != DBNull.Value &&
-                               Convert.ToBoolean(row["Working"]);
-
-                if (!working)
-                {
-                    worksheet.Range(rowIndex, 6, rowIndex, 9).Merge();
-                    if (row.Table.Columns.Contains("Holiday Description") &&
-                        row["Holiday Description"] != DBNull.Value &&
-                        !string.IsNullOrEmpty(row["Holiday Description"].ToString()))
-                    {
-                        worksheet.Cell(rowIndex, 6).Value = row["Holiday Description"].ToString();
-                        worksheet.Cell(rowIndex, 6).Style.Fill.BackgroundColor = XLColor.PinkOrange;
-                    }
-                    else
-                    {
-                        worksheet.Cell(rowIndex, 6).Value = "";
-                        worksheet.Cell(rowIndex, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#BFBFBF");
-                    }
-                    worksheet.Cell(rowIndex, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                }
-                else
-                {
-                    
-                    worksheet.Cell(rowIndex, 6).Value = XLCellValue.FromObject(row["Clock In"]);
-                    worksheet.Cell(rowIndex, 7).Value = XLCellValue.FromObject(row["Clock Out"]);
-                    worksheet.Cell(rowIndex, 8).Value = XLCellValue.FromObject(row["Accumulated Time"]);
-                    worksheet.Cell(rowIndex, 9).Value = XLCellValue.FromObject(row["WFO"]);
-                    worksheet.Cell(rowIndex, 10).Value = XLCellValue.FromObject(row["Activity"]);
-                }
-
-                rowIndex++;
-            }
-
-            using var stream = new MemoryStream();
-            workbook.SaveAs(stream);
-            stream.Position = 0;
-
-            var bytes = stream.ToArray();
-            var fileName = $"Timesheet_{userId}_{month}_{year}.xlsx";
-
-            return new ExcelFileDto
-            {
-                Content = bytes,
-                FileName = fileName,
-                ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            };
-        }
-
         public async Task<ExcelFileDto> GenerateTimesheetFromTemplateAsync(string userId, int month, int year)
         {
             // 1. Ambil data timesheet
@@ -133,7 +32,9 @@ namespace Timesheet_app.Services
             var templateFileName = "templateTimesheet.xlsx";
             var fullTemplatePath = Path.Combine(templatePath, templateFileName);
 
-            string name = dt.Rows[0]["Name"] != DBNull.Value ? dt.Rows[0]["Name"].ToString() : "Unknown";
+            var listColumns = dt.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToList();
+
+            string name = dt.Rows[0][listColumns[0]] != DBNull.Value ? dt.Rows[0][listColumns[0]].ToString() : "Unknown";
             var date = new DateTime(year, month, 1);
 
             var periodDate = date.ToString("MMM-yy");
@@ -167,15 +68,22 @@ namespace Timesheet_app.Services
             foreach (DataRow row in dt.Rows)
             {
                 var totalDaysInMonth = daysInMonth + 7;
-                if(rowIndex > totalDaysInMonth)
+                if (rowIndex > totalDaysInMonth)
                 {
-                    worksheet.Row(rowIndex -1).CopyTo(worksheet.Row(rowIndex));
+                    worksheet.Row(rowIndex - 1).CopyTo(worksheet.Row(rowIndex));
                 }
+                //foreach (var column in listColumns)
+                //{
+                //    //{ "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description", "Activity", "ProjectName" }
 
-                worksheet.Cell(rowIndex, 1).Value = XLCellValue.FromObject(row["Name"]);
-                worksheet.Cell(rowIndex, 2).Value = XLCellValue.FromObject(row["Vendor Name"]);
-                worksheet.Cell(rowIndex, 3).Value = XLCellValue.FromObject(row["No SPK"]);
-                worksheet.Cell(rowIndex, 4).Value = XLCellValue.FromObject(row["Date"]);
+
+                //    AddDataExcel(worksheet, rowIndex, row, column);
+                //}
+
+                AddDataExcel(worksheet, rowIndex, row, listColumns[0]);
+                AddDataExcel(worksheet, rowIndex, row, listColumns[1]);
+                AddDataExcel(worksheet, rowIndex, row, listColumns[2]);
+                AddDataExcel(worksheet, rowIndex, row, listColumns[3]);
                 if (row.Table.Columns.Contains("Working") &&
                    row["Working"] != DBNull.Value &&
                    !Convert.ToBoolean(row["Working"]))
@@ -194,26 +102,24 @@ namespace Timesheet_app.Services
                         worksheet.Range(rowIndex, 5, rowIndex, 10).Value = "";
                         worksheet.Range(rowIndex, 4, rowIndex, 10).Style.Fill.BackgroundColor = XLColor.FromHtml("#808080");
                     }
-                    
+
 
                     countNotWorkingDays++;
                 }
                 else
                 {
-                    worksheet.Cell(rowIndex, 5).Value = XLCellValue.FromObject(row["Clock In"]);
-                    worksheet.Cell(rowIndex, 6).Value = XLCellValue.FromObject(row["Clock Out"]);
-                    worksheet.Cell(rowIndex, 7).Value = XLCellValue.FromObject(row["Accumulated Time"]);
-                    worksheet.Cell(rowIndex, 8).Value = XLCellValue.FromObject(row["ProjectName"]);
-                    worksheet.Cell(rowIndex, 9).Value = XLCellValue.FromObject(row["Activity"]);
-                    worksheet.Cell(rowIndex, 10).Value = XLCellValue.FromObject(row["WFO"]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[4]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[5]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[6]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[7]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[8]);
+                    AddDataExcel(worksheet, rowIndex, row, listColumns[9]);
                 }
                 worksheet.Range(rowIndex, 1, rowIndex, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
 
                 rowIndex++;
             }
-
-            
 
             // Delete extra rows
             if (lastDataRow < templateEndRow)
@@ -247,68 +153,15 @@ namespace Timesheet_app.Services
             };
         }
 
-        /// <summary>
-        /// Reads the Excel template file from the configured template location.
-        /// Reads headers from range A8:J8 and content starting from row 9.
-        /// Maps Excel data directly to TimesheetExcelDTO objects.
-        /// Template file path: FileLocation:Templates/templateTimesheet.xlsx
-        /// </summary>
-        public async Task<List<TimesheetExcelDTO>> ReadTemplateFile()
+        private static void AddDataExcel(IXLWorksheet worksheet, int rowIndex, DataRow row, string columnName)
         {
-            var templatePath = _configuration["FileLocation:Templates"];
-            if (string.IsNullOrWhiteSpace(templatePath))
-                throw new InvalidOperationException("Template file path is not configured in appsettings.json (FileLocation:Templates).");
-
-            var templateFileName = "templateTimesheet.xlsx";
-            var fullTemplatePath = Path.Combine(templatePath, templateFileName);
-
-            if (!File.Exists(fullTemplatePath))
-                throw new FileNotFoundException($"Template file not found at path: {fullTemplatePath}");
-
-            var excelDataList = new List<TimesheetExcelDTO>();
-
-            using (var workbook = new XLWorkbook(fullTemplatePath))
-            {
-                var worksheet = workbook.Worksheet(1);
-
-                // Read content rows starting from row 9 (headers are in row 8)
-                int contentRow = 9;
-                while (!worksheet.Cell(contentRow, 1).IsEmpty())
-                {
-                    worksheet.Cell(contentRow, 1).Value = worksheet.Cell(contentRow, 1).GetString().Trim();
-                    var excelDto = new TimesheetExcelDTO
-                    {
-                        Nama = GetCellValue(worksheet, contentRow, 1),
-                        Vendor = GetCellValue(worksheet, contentRow, 2),
-                        SPK = GetCellValue(worksheet, contentRow, 3),
-                        Tanggal = GetCellValue(worksheet, contentRow, 4),
-                        FlexyHourStart = GetCellValue(worksheet, contentRow, 5),
-                        FlexyHourEnd = GetCellValue(worksheet, contentRow, 6),
-                        Hour = GetCellValue(worksheet, contentRow, 7),
-                        ProjectIdProjectName = GetCellValue(worksheet, contentRow, 8),
-                        Activity = GetCellValue(worksheet, contentRow, 9),
-                        WfoWfh = GetCellValue(worksheet, contentRow, 10)
-                    };
-
-                    excelDataList.Add(excelDto);
-                    contentRow++;
-                }
-            }
-
-            return await Task.FromResult(excelDataList);
+            worksheet.Cell(rowIndex, 1).Value = XLCellValue.FromObject(row[columnName]);
+            worksheet.Cell(rowIndex, 1).Style.Font.Bold = false;
+            worksheet.Cell(rowIndex, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         }
 
-        /// <summary>
-        /// Gets the value from an Excel cell and converts it to string.
-        /// Returns empty string if cell is empty.
-        /// </summary>
-        private string GetCellValue(IXLWorksheet worksheet, int row, int column)
-        {
-            var cell = worksheet.Cell(row, column);
-            return cell.IsEmpty() ? string.Empty : cell.Value.ToString();
-        }
 
-        
+
 
 
     }
