@@ -28,7 +28,8 @@ namespace Timesheet_app.Services
                 throw new InvalidOperationException("No timesheet data found for the specified user and period.");
 
             // 2. Ambil path template
-            var templatePath = _configuration["FileLocation:Templates"];
+            
+            var templatePath = FileHelper.GetTemplate(_configuration);
             var templateFileName = "templateTimesheet.xlsx";
             var fullTemplatePath = Path.Combine(templatePath, templateFileName);
 

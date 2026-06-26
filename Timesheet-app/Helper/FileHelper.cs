@@ -11,9 +11,5 @@
             return Path.Combine(basePath, relative);
         }
 
-        public static string Combine(params string[] paths)
-        {
-            return Path.Combine(paths);
-        }
     }
 }

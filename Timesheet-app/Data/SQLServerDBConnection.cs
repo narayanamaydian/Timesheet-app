@@ -15,6 +15,9 @@ namespace Timesheet_app.Data
         public DbSet<ProjectModel> Projects { get; set; }
         public DbSet<ProjectDetailModel> ProjectDetails { get; set; }
         public DbSet<UserProjectModel> UserProjects { get; set; }
+        public DbSet<TimesheetTemplateModel> TimesheetTemplates { get; set; }
+        public DbSet<TimesheetTemplateHeaderModel> TimesheetTemplateHeaders { get; set; }
+        public DbSet<CompanyModel> Companies { get; set; }
 
-    }
+        }
 }

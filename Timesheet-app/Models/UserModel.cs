@@ -8,6 +8,7 @@ namespace Timesheet_app.Models
         public required string Name { get; set; }
         public required string VendorName { get; set; }
         public required string NoSpk { get; set; }
+        public string? CompanyId { get; set; }
         public List<TimesheetModel>? Timesheets { get; set; }
         public List<UserProjectModel>? UserProjects { get; set; }
 
