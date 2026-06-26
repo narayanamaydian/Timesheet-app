@@ -58,12 +58,16 @@ namespace Timesheet_app.Services
             using var workbook = new XLWorkbook(fullTemplatePath);
             var worksheet = workbook.Worksheet(1);
 
+            var headerColumns = ScanFileAndReturnHeaderAsync(worksheet, out int headerRow);
+
+            var headerColumnsString = string.Join(", ", headerColumns);
+
             // 3. Template kamu mulai data di row 9
 
 
             var countNotWorkingDays = 0;
 
-            int rowIndex = 9;
+            int rowIndex = headerRow + 1;
 
             foreach (DataRow row in dt.Rows)
             {
@@ -74,9 +78,10 @@ namespace Timesheet_app.Services
                 }
                 //foreach (var column in listColumns)
                 //{
-                //    //{ "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description", "Activity", "ProjectName" }
-
-
+                //this is my data
+                //    { "User ID", "Name", "Vendor Name", "No SPK", "Date", "Clock In", "Clock Out", "Accumulated Time", "WFO", "Working", "Holiday Description", "Activity", "ProjectName" }
+                // this is my excel header
+                //    Nama, Vendor, SPK, Tanggal, Flexy Hour Start, Flexy Hour End, Hour, Project ID - Project Name, Activity, WFO/WFH
                 //    AddDataExcel(worksheet, rowIndex, row, column);
                 //}
 
@@ -160,9 +165,54 @@ namespace Timesheet_app.Services
             worksheet.Cell(rowIndex, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         }
 
+        private static List<string> ScanFileAndReturnHeaderAsync(IXLWorksheet worksheet, out int headerRow)
+        {
+            var headers = new List<string>();
+            int foundHeaderRow = 1;
+            headerRow = 0;
 
+            int columnNumber = 1;
+            bool headerFound = false;
 
+            // Scan columns until we find a non-empty row
+            while (!headerFound && columnNumber <= 100)
+            {
+                // Scan rows 1-100 in the current column
+                for (int row = 1; row <= 100; row++)
+                {
+                    var cell = worksheet.Cell(row, columnNumber);
 
+                    if (!cell.Value.IsBlank && !string.IsNullOrWhiteSpace(cell.Value.ToString()))
+                    {
+                        // Found a non-empty cell, this row is the header row
+                        headerFound = true;
+                        foundHeaderRow = row;
 
+                        // Extract all headers from this row across all columns
+                        int colIndex = 1;
+                        while (true)
+                        {
+                            var headerCell = worksheet.Cell(row, colIndex);
+                            if (headerCell.Value.IsBlank || string.IsNullOrWhiteSpace(headerCell.Value.ToString()))
+                            {
+                                break;
+                            }
+                            headers.Add(headerCell.Value.ToString());
+                            colIndex++;
+                        }
+                        break;
+                    }
+                }
+
+                // Move to next column if header not found
+                if (!headerFound)
+                {
+                    columnNumber++;
+                }
+            }
+
+            headerRow = foundHeaderRow;
+            return headers;
+        }
     }
 }
