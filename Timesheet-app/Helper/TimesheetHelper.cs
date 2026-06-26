@@ -12,7 +12,7 @@ namespace Timesheet_app.Helper
         /// </summary>
         public static string GetIdByClockAndUserId(string userId, out DateOnly dateOnly, out TimeOnly timeOnly)
         {
-            var dateNow = DateTime.Now;
+            var dateNow = DateTimeHelper.NowJakarta();
             dateOnly = DateOnly.FromDateTime(dateNow);
             timeOnly = TimeOnly.FromDateTime(dateNow);
             return userId + "-" + dateOnly.ToString("yyyyMMdd");
@@ -32,6 +32,7 @@ namespace Timesheet_app.Helper
                 AccumulatedTime = m.AccumulatedTime,
                 Working = m.Working,
                 WFO = (TimesheetDTO.WorkStatus)(WorkStatus)m.WFO,
+                TaskDetail = m.TaskDetail,
             }).ToList();
         }
 
@@ -49,7 +50,8 @@ namespace Timesheet_app.Helper
                 AccumulatedTime = dto.AccumulatedTime,
                 Working = dto.Working,
                 WFO = (WorkStatus)dto.WFO,
-                UserID = user.Id
+                UserID = user.Id,
+                TaskDetail = dto.TaskDetail,
             };
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Drawing;
+using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
@@ -99,36 +100,13 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpGet("export/{userId}")]
-        public async Task<IActionResult> GenerateExcelData(string userId, [FromQuery] int month, [FromQuery] int year)
-        {
-            if (month == 0 || year == 0)
-            {
-                return BadRequest("Request data is required");
-            }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            try
-            {
-                var excel = await _exportService.GenerateTimesheetExcelAsync(userId, month, year);
-                return File(excel.Content, excel.ContentType, excel.FileName);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        
         [HttpPost("clockIn/{userId}")]
-        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] int status)
+        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] RequestDTO.ClockIn clockIn)
         {
             try
             {
+                var status = clockIn.status;
                 var timesheet = await _timesheetService.AddOrUpdateClockIn(userId, status);
                 return Ok(timesheet);
             }
@@ -140,10 +118,11 @@ namespace Timesheet_app.Controllers
         }
 
         [HttpPut("clockOut/{userId}")]
-        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] string activity)
+        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] RequestDTO.ClockOut clockOut)
         {
             try
             {
+                var activity = clockOut.activity;
                 var timesheet = await _timesheetService.AddOrUpdateClockOut(userId, activity);
                 return Ok(timesheet);
             }
@@ -161,19 +140,7 @@ namespace Timesheet_app.Controllers
             return Ok();
         }
 
-        [HttpGet("GetExcelTemplate")]
-        public async Task<IActionResult> GetExcelTemplate()
-        {
-            try
-            {
-                var excel = await _exportService.ReadTemplateFile();
-                return Ok(excel);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        
 
         [HttpGet("exportTemplate/{userId}")]
         public async Task<IActionResult> GenerateExcelFromTemplate(string userId, [FromQuery] int month, [FromQuery] int year)

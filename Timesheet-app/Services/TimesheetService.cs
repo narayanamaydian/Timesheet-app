@@ -129,11 +129,13 @@ namespace Timesheet_app.Services
                 var status = ExtensionHelper.GetEnumDescription(timesheet.WFO);
                 var holiday = await _holidayService.GetHolidayByDate(timesheet.Date);
                 var holidayDescription = holiday != null ? holiday.Description : string.Empty;
-                var clockIn = timesheet.ClockIn.HasValue ? timesheet.ClockIn.Value.ToString("hh:mm:ss tt") : string.Empty;
-                var clockOut = timesheet.ClockOut.HasValue ? timesheet.ClockOut.Value.ToString("hh:mm:ss tt") : string.Empty;
+                var clockIn = timesheet.ClockIn.HasValue ? timesheet.ClockIn.Value.ToString("HH:mm:ss") : string.Empty;
+                var clockOut = timesheet.ClockOut.HasValue ? timesheet.ClockOut.Value.ToString("HH:mm:ss") : string.Empty;
                 var date = timesheet.Date.ToString("dddd, dd MMMM yyyy");
+                var accumulatedTime = timesheet.AccumulatedTime != null ? timesheet.AccumulatedTime.ToString(@"hh\:mm\:ss") : string.Empty;
 
-                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, date, clockIn, clockOut, timesheet.AccumulatedTime, status, timesheet.Working, holidayDescription, timesheet.TaskDetail, projectName);
+
+                table.Rows.Add(user.Id, user.Name, user.VendorName, user.NoSpk, date, clockIn, clockOut, accumulatedTime, status, timesheet.Working, holidayDescription, timesheet.TaskDetail, projectName);
             }
 
             return table;
@@ -218,7 +220,7 @@ namespace Timesheet_app.Services
 
                 var timesheetId = userId + "-" + currentDate.ToString("yyyyMMdd");
 
-                var isItExist = _timesheetRepo.GetTimesheetById(timesheetId).Result;
+                var isItExist = await _timesheetRepo.GetTimesheetById(timesheetId);
                 if (isItExist != null)
                 {
                     continue;
