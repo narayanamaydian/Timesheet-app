@@ -32,6 +32,7 @@ namespace Timesheet_app.Helper
                 AccumulatedTime = m.AccumulatedTime,
                 Working = m.Working,
                 WFO = (TimesheetDTO.WorkStatus)(WorkStatus)m.WFO,
+                TaskDetail = m.TaskDetail,
             }).ToList();
         }
 
@@ -49,7 +50,8 @@ namespace Timesheet_app.Helper
                 AccumulatedTime = dto.AccumulatedTime,
                 Working = dto.Working,
                 WFO = (WorkStatus)dto.WFO,
-                UserID = user.Id
+                UserID = user.Id,
+                TaskDetail = dto.TaskDetail,
             };
         }
 

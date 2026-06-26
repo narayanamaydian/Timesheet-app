@@ -41,6 +41,7 @@ namespace Timesheet_app.Services
             worksheet.Cell(rowIndex, 7).Value = "Clock Out";
             worksheet.Cell(rowIndex, 8).Value = "Accumulated Time";
             worksheet.Cell(rowIndex, 9).Value = "WFO";
+            worksheet.Cell(rowIndex, 10).Value = "Activity";
 
             // simple styling: header background, bold, freeze row, adjust widths
             var headerRange = worksheet.Range(rowIndex, 1, rowIndex, 9);
@@ -57,6 +58,7 @@ namespace Timesheet_app.Services
             worksheet.Column(7).Width = 14; // Clock Out
             worksheet.Column(8).Width = 18; // Accumulated Time
             worksheet.Column(9).Width = 10; // WFO
+            worksheet.Column(10).Width = 16; // Activity
 
             rowIndex++;
 
@@ -97,6 +99,7 @@ namespace Timesheet_app.Services
                     worksheet.Cell(rowIndex, 7).Value = XLCellValue.FromObject(row["Clock Out"]);
                     worksheet.Cell(rowIndex, 8).Value = XLCellValue.FromObject(row["Accumulated Time"]);
                     worksheet.Cell(rowIndex, 9).Value = XLCellValue.FromObject(row["WFO"]);
+                    worksheet.Cell(rowIndex, 10).Value = XLCellValue.FromObject(row["Activity"]);
                 }
 
                 rowIndex++;
