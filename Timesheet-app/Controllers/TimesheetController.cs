@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Drawing;
+using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using Timesheet_app.Models.DAO;
 using Timesheet_app.Models.DTOs;
 using Timesheet_app.Services;
@@ -10,15 +12,15 @@ namespace Timesheet_app.Controllers
     public class TimesheetController : ControllerBase
     {
         private readonly ITimesheetService _timesheetService;
-        private readonly IUserService _userService;
+        private readonly ITimesheetExportService _exportService;
 
-        public TimesheetController(ITimesheetService timesheetService, IUserService userService)
+        public TimesheetController(ITimesheetService timesheetService, ITimesheetExportService exportService)
         {
             _timesheetService = timesheetService;
-            _userService = userService;
+            _exportService = exportService;
         }
 
-        [HttpGet("GetTimesheetByMonth/{userId}/{month}/{year}")]
+        [HttpGet("month/{userId}/{month}/{year}")]
         public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByMonth(string userId, int month, int year)
         {
             try
@@ -32,7 +34,7 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpGet("GetTimesheetByUser/{userId}")]
+        [HttpGet("user/{userId}")]
         public async Task<ActionResult<List<TimesheetDTO>>> GetTimesheetByUser(string userId, [FromQuery] int? month)
         {
             try
@@ -46,7 +48,7 @@ namespace Timesheet_app.Controllers
             }
         }
 
-        [HttpPost("add/{userId}")]
+        [HttpPost("{userId}")]
         public async Task<ActionResult<TimesheetDTO>> AddTimesheet(string userId, [FromBody] TimesheetDTO timesheet)
         {
             if (timesheet == null)
@@ -97,5 +99,76 @@ namespace Timesheet_app.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        
+        [HttpPost("clockIn/{userId}")]
+        public async Task<ActionResult> InsertClockIn(string userId, [FromBody] RequestDTO.ClockIn clockIn)
+        {
+            try
+            {
+                var status = clockIn.status;
+                var timesheet = await _timesheetService.AddOrUpdateClockIn(userId, status);
+                return Ok(timesheet);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
+        }
+
+        [HttpPut("clockOut/{userId}")]
+        public async Task<ActionResult> InsertClockOut(string userId, [FromBody] RequestDTO.ClockOut clockOut)
+        {
+            try
+            {
+                var activity = clockOut.activity;
+                var timesheet = await _timesheetService.AddOrUpdateClockOut(userId, activity);
+                return Ok(timesheet);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdateTimesheet(string id, TimesheetDTO dto)
+        {
+            // service call
+            return Ok();
+        }
+
+        
+
+        [HttpGet("exportTemplate/{userId}")]
+        public async Task<IActionResult> GenerateExcelFromTemplate(string userId, [FromQuery] int month, [FromQuery] int year)
+        {
+            if (month == 0 || year == 0)
+            {
+                return BadRequest("Request data is required");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var excel = await _exportService.GenerateTimesheetFromTemplateAsync(userId, month, year);
+                return File(excel.Content, excel.ContentType, excel.FileName);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
     }
 }
+

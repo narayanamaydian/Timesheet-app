@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Timesheet_app.Data;
 
@@ -11,9 +12,11 @@ using Timesheet_app.Data;
 namespace Timesheet_app.Migrations
 {
     [DbContext(typeof(SQLServerDBConnection))]
-    partial class SQLServerDBConnectionModelSnapshot : ModelSnapshot
+    [Migration("20260616102649_UpdateNullableColumnTaskDetail")]
+    partial class UpdateNullableColumnTaskDetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,40 +49,6 @@ namespace Timesheet_app.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Holidays");
-                });
-
-            modelBuilder.Entity("Timesheet_app.Models.ProjectDetailModel", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Activities")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProjectId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("ProjectDetails");
-                });
-
-            modelBuilder.Entity("Timesheet_app.Models.ProjectModel", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProjectName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("Timesheet_app.Models.TimesheetModel", b =>
@@ -141,39 +110,6 @@ namespace Timesheet_app.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Timesheet_app.Models.UserProjectModel", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProjectId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserProjects");
-                });
-
-            modelBuilder.Entity("Timesheet_app.Models.ProjectDetailModel", b =>
-                {
-                    b.HasOne("Timesheet_app.Models.ProjectModel", "Project")
-                        .WithMany("Details")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-                });
-
             modelBuilder.Entity("Timesheet_app.Models.TimesheetModel", b =>
                 {
                     b.HasOne("Timesheet_app.Models.UserModel", "User")
@@ -185,37 +121,9 @@ namespace Timesheet_app.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Timesheet_app.Models.UserProjectModel", b =>
-                {
-                    b.HasOne("Timesheet_app.Models.ProjectModel", "Project")
-                        .WithMany("UserProjects")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Timesheet_app.Models.UserModel", "User")
-                        .WithMany("UserProjects")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Timesheet_app.Models.ProjectModel", b =>
-                {
-                    b.Navigation("Details");
-
-                    b.Navigation("UserProjects");
-                });
-
             modelBuilder.Entity("Timesheet_app.Models.UserModel", b =>
                 {
                     b.Navigation("Timesheets");
-
-                    b.Navigation("UserProjects");
                 });
 #pragma warning restore 612, 618
         }

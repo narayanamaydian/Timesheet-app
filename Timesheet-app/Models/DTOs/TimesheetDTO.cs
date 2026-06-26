@@ -1,7 +1,8 @@
-﻿
-namespace Timesheet_app.Models
+﻿using System.ComponentModel;
+
+namespace Timesheet_app.Models.DAO
 {
-    public class TimesheetModel
+    public class TimesheetDTO
     {
         public required string Id { get; set; }
         public DateOnly Date { get; set; }
@@ -10,17 +11,19 @@ namespace Timesheet_app.Models
         public TimeSpan AccumulatedTime { get; set; } // Stores total time worked
         public bool Working { get; set; }
         public WorkStatus WFO { get; set; } = WorkStatus.WFH;
+        public string TaskDetail { get; set; }
 
-        public string UserID { get; set; } // Foreign key to UserModel
-        public UserModel User { get; set; } // Navigation property to UserModel
-        public string? TaskDetail { get; set; }
+        public enum WorkStatus
+        {
+            [Description("Not Working")]
+            NotWorking = 0,
 
-    }
+            [Description("WFO")]
+            WFO = 1,
 
-    public enum WorkStatus
-    {
-        NotWorking = 0,
-        WFO = 1,
-        WFH = 2 
+            [Description("WFH")]
+            WFH = 2
+        }
+
     }
 }
